@@ -1,0 +1,1 @@
+{"name":"My Plugin Hub","description":"Adds plugins from this repository to the plugin list, disabled until enabled manually","authors":[{"name":"Repository owner"}],"main":"hub.js","hash":"plugin-hub-20261114-1"}
