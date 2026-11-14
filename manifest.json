@@ -1,0 +1,1 @@
+{"name":"ValidUserAuto","description":"Automatically resolves unknown user mentions when messages load","authors":[{"name":"fshin","id":"1381008677301129257"},{"name":"o.oer","id":"306810730055729152"},{"name":"kmmiio99o","id":"879393496627306587"}],"main":"index.js","vendetta":{"icon":"ic_mention_24px"},"hash":"validuser-auto-20261114-8"}
