@@ -1,0 +1,1 @@
+{"name":"Spotify Diagnostic","description":"Temporary token-safe diagnostics for Spotify connection, protocol and player-state events","authors":[{"name":"kmmiio99o","id":"879393496627306587"}],"main":"index.js","vendetta":{"icon":"Spotify"},"hash":"d3363638e1152fd82f417c6cbfa83e2a83461af2a6cd85885dc2375c9bd5d5b9"}
