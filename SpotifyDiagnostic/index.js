@@ -7,6 +7,7 @@
   const SpotifyStore = metro.findByStoreName?.("SpotifyStore");
   const SpotifyProtocolStore = metro.findByStoreName?.("SpotifyProtocolStore");
   const subscriptions = [];
+  let unpatchDispatch = null;
   let timer = null;
   let previousSnapshot = "";
 
@@ -85,12 +86,24 @@
         protocolMethods: methodNames(SpotifyProtocolStore)
       });
       eventNames.forEach(subscribeEvent);
+      if (dispatcher?.dispatch && vendetta.patcher?.before) {
+        unpatchDispatch = vendetta.patcher.before("dispatch", dispatcher, args => {
+          const type = args?.[0]?.type;
+          if (typeof type !== "string" || !type.toUpperCase().includes("SPOTIFY")) return;
+          console.log("[SpotifyDiag] dispatch", type);
+          setTimeout(() => reportSnapshot(`dispatch:${type}`), 0);
+        });
+        console.log("[SpotifyDiag] dispatch trace enabled");
+      }
       reportSnapshot("load");
       timer = setInterval(() => reportSnapshot("poll"), 1000);
     },
     onUnload() {
       if (timer !== null) clearInterval(timer);
       timer = null;
+      try { unpatchDispatch?.(); }
+      catch (error) { console.warn("[SpotifyDiag] dispatch unpatch failed", String(error)); }
+      unpatchDispatch = null;
       while (subscriptions.length) {
         try { subscriptions.pop()(); }
         catch (error) { console.warn("[SpotifyDiag] unsubscribe failed", String(error)); }
