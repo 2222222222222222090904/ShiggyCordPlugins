@@ -76,16 +76,40 @@
 
   function patchQuestDockStore() {
     const store = vendetta.metro.findByStoreName?.("QuestDockStore");
-    if (typeof store?.isEligibleToBeVisible !== "function") {
-      console.warn("[NoHomeQuestAds] visibility gate unavailable");
+    if (!store) {
+      console.warn("[NoHomeQuestAds] visibility store unavailable");
       return false;
     }
 
-    unpatches.push(
-      vendetta.patcher.instead("isEligibleToBeVisible", store, () => false)
+    if (typeof store.isEligibleToBeVisible === "function") {
+      unpatches.push(
+        vendetta.patcher.instead("isEligibleToBeVisible", store, () => false)
+      );
+      console.log("[NoHomeQuestAds] disabled QuestDockStore visibility method");
+      return true;
+    }
+
+    const owners = [store, Object.getPrototypeOf(store)].filter(Boolean);
+    for (const owner of owners) {
+      const descriptor = Object.getOwnPropertyDescriptor(owner, "isEligibleToBeVisible");
+      if (!descriptor?.get || descriptor.configurable === false) continue;
+
+      Object.defineProperty(owner, "isEligibleToBeVisible", {
+        ...descriptor,
+        get: () => false
+      });
+      unpatches.push(() => {
+        Object.defineProperty(owner, "isEligibleToBeVisible", descriptor);
+      });
+      console.log("[NoHomeQuestAds] disabled QuestDockStore visibility getter");
+      return true;
+    }
+
+    console.warn(
+      "[NoHomeQuestAds] visibility gate unavailable",
+      typeof store.isEligibleToBeVisible
     );
-    console.log("[NoHomeQuestAds] disabled QuestDockStore visibility");
-    return true;
+    return false;
   }
 
   const plugin = {
