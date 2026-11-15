@@ -70,16 +70,27 @@
       : [];
     console.log("[NoHomeQuestAds] QuestDockStore", !!store, keys);
 
-    try { store?.emitChange?.(); }
+    try { store?.doEmitChanges?.(); }
     catch (error) { console.warn("[NoHomeQuestAds] store refresh failed", String(error)); }
+  }
 
-    const dispatcher = metro.findByProps?.("dispatch", "subscribe");
-    try { dispatcher?.dispatch?.({ type: "QUESTS_FETCH_SUCCESS" }); }
-    catch (error) { console.warn("[NoHomeQuestAds] dispatcher refresh failed", String(error)); }
+  function patchQuestDockStore() {
+    const store = vendetta.metro.findByStoreName?.("QuestDockStore");
+    if (typeof store?.isEligibleToBeVisible !== "function") {
+      console.warn("[NoHomeQuestAds] visibility gate unavailable");
+      return false;
+    }
+
+    unpatches.push(
+      vendetta.patcher.instead("isEligibleToBeVisible", store, () => false)
+    );
+    console.log("[NoHomeQuestAds] disabled QuestDockStore visibility");
+    return true;
   }
 
   const plugin = {
     onLoad() {
+      patchQuestDockStore();
       patchQuestDock();
       for (const delay of [0, 500, 2000]) {
         const timer = setTimeout(() => {
