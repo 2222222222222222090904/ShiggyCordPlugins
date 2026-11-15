@@ -50,6 +50,26 @@
     }
   }
 
+  function reportApiShape() {
+    try {
+      const apiModule = metro.findByProps?.("SpotifyAPI", "subscribePlayerStateNotifications");
+      const api = apiModule?.SpotifyAPI;
+      const subscribe = apiModule?.subscribePlayerStateNotifications;
+      console.log("[SpotifyDiag] api shape", {
+        module: safeKeys(apiModule),
+        api: safeKeys(api),
+        apiType: typeof api,
+        subscribeType: typeof subscribe,
+        subscribeArity: typeof subscribe === "function" ? subscribe.length : null,
+        apiSubscribeArity: typeof api?.subscribePlayerStateNotifications === "function"
+          ? api.subscribePlayerStateNotifications.length
+          : null
+      });
+    } catch (error) {
+      console.warn("[SpotifyDiag] api shape failed", String(error));
+    }
+  }
+
   function readSnapshot() {
     let active = null;
     let player = null;
@@ -118,6 +138,7 @@
         console.warn("[SpotifyDiag] active shape failed", String(error));
       }
       reportModuleInventory();
+      reportApiShape();
       eventNames.forEach(subscribeEvent);
       if (dispatcher?.dispatch && vendetta.patcher?.before) {
         unpatchDispatch = vendetta.patcher.before("dispatch", dispatcher, args => {
