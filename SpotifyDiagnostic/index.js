@@ -30,6 +30,26 @@
     ])].filter(key => typeof store[key] === "function");
   }
 
+  function safeKeys(value) {
+    if (!value || (typeof value !== "object" && typeof value !== "function")) return [];
+    return [...new Set([
+      ...Object.keys(value),
+      ...Object.getOwnPropertyNames(Object.getPrototypeOf(value) || {})
+    ])].filter(key => !/(token|auth|cookie|header|secret|credential)/i.test(key));
+  }
+
+  function reportModuleInventory() {
+    try {
+      const matches = metro.findAll?.(value => {
+        if (!value || (typeof value !== "object" && typeof value !== "function")) return false;
+        return Object.keys(value).some(key => /spotify/i.test(key));
+      }) ?? [];
+      console.log("[SpotifyDiag] module inventory", matches.slice(0, 40).map(safeKeys));
+    } catch (error) {
+      console.warn("[SpotifyDiag] module inventory failed", String(error));
+    }
+  }
+
   function readSnapshot() {
     let active = null;
     let player = null;
@@ -85,12 +105,25 @@
         spotifyMethods: methodNames(SpotifyStore),
         protocolMethods: methodNames(SpotifyProtocolStore)
       });
+      try {
+        const active = SpotifyStore?.getActiveSocketAndDevice?.() ?? null;
+        const socket = active?.socket ?? active?.spotifySocket ?? active?.[0] ?? null;
+        const device = active?.device ?? active?.spotifyDevice ?? active?.[1] ?? null;
+        console.log("[SpotifyDiag] active shape", {
+          active: safeKeys(active),
+          socket: safeKeys(socket),
+          device: safeKeys(device)
+        });
+      } catch (error) {
+        console.warn("[SpotifyDiag] active shape failed", String(error));
+      }
+      reportModuleInventory();
       eventNames.forEach(subscribeEvent);
       if (dispatcher?.dispatch && vendetta.patcher?.before) {
         unpatchDispatch = vendetta.patcher.before("dispatch", dispatcher, args => {
           const type = args?.[0]?.type;
           if (typeof type !== "string" || !type.toUpperCase().includes("SPOTIFY")) return;
-          console.log("[SpotifyDiag] dispatch", type);
+          console.log("[SpotifyDiag] dispatch", type, safeKeys(args?.[0]));
           setTimeout(() => reportSnapshot(`dispatch:${type}`), 0);
         });
         console.log("[SpotifyDiag] dispatch trace enabled");
